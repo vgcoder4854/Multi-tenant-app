@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Local databases / embedded postgres data
+*.db
+*.sqlite3
+.devdata/
+pgdata/
+
+# Env
+.env
+.env.local
+!.env.example
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/coverage/
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Windows download marker files
+*Zone.Identifier
