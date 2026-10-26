@@ -150,6 +150,8 @@ PostgreSQL, `RAISE(ABORT)` on SQLite).
 | `app/services/project_service.py` | Projects + members | `create_project`, `list_projects`, `get_project`, `update_project`, `archive_project`, `add/remove/list_project_members` |
 | `app/services/task_service.py` | Tasks + status history | `create_task`, `update_task`, `change_status`, `get_task`, `list_tasks`, `ALLOWED_TRANSITIONS` |
 | `app/services/notification_service.py` | In-app notifications | `notify()` |
+| `app/services/workflow_engine.py` | Pure state machine (no DB) | `can_decide`, `assert_can_decide`, `next_state`, `current_step`, `RequestNotPending`, `NotAuthorizedApprover` |
+| `app/services/workflow_service.py` | Templates + requests | `create_template`, `update_template`, `deactivate_template`, `submit_request`, `decide`, `cancel_request`, `list_pending_for_me`, `count_pending_for_me` |
 
 ---
 
@@ -282,6 +284,25 @@ All paths are under `/api/v1`. Full table in `docs/api.md`.
 suspended org with 403 `ORG_SUSPENDED` on every tenant endpoint. `switch-organization`
 still succeeds (so the UI can show a clear "suspended" page).
 
+### Workflow templates (tag `workflow-templates`)
+| Method | Path | Role | Success | Errors |
+| --- | --- | --- | --- | --- |
+| POST | `/workflow-templates` | org_admin | 201 (with ordered steps) | 409 TEMPLATE_NAME_TAKEN, 422 INVALID_APPROVER / NO_STEPS |
+| GET | `/workflow-templates` | any member | 200 list | 403 |
+| GET | `/workflow-templates/{id}` | any member | 200 | 404 |
+| PATCH | `/workflow-templates/{id}` | org_admin | 200 | 409 TEMPLATE_NAME_TAKEN / TEMPLATE_IN_USE, 422 |
+| POST | `/workflow-templates/{id}/deactivate` | org_admin | 200 | 404 |
+
+### Approval requests (tag `approvals`)
+| Method | Path | Who | Success | Errors |
+| --- | --- | --- | --- | --- |
+| POST | `/approval-requests` | any member | 201 (starts step 1, pending) | 409 TEMPLATE_INACTIVE, 422 |
+| GET | `/approval-requests/mine` | requester | 200 list | 403 |
+| GET | `/approval-requests/pending-for-me` | approver | 200 list | 403 |
+| GET | `/approval-requests/{id}` | requester/approver/org_admin | 200 detail (steps + decisions + can_decide) | 404 |
+| POST | `/approval-requests/{id}/decision` | current approver | 200 | 403 NOT_AUTHORIZED_APPROVER, 409 REQUEST_NOT_PENDING |
+| POST | `/approval-requests/{id}/cancel` | requester (pending only) | 200 | 404, 409 |
+
 ---
 
 ## 9. How to Run and Test
@@ -353,3 +374,4 @@ npm test
 - **4.4** — security core: `app/api/deps.py` (`get_current_user`, `get_org_context`, `require_roles`, `require_platform_admin`, `OrgContext`), `app/services/tenant.py` (`get_in_org`, `list_query`, `assert_same_org`), `app/core/permissions.py` (matrix). 5 tenant-helper unit tests (two orgs).
 - **4.3.2–4.3.5** — auth & organization management: register/login/me, create org, workspace switching, invitations (invite/list/revoke/accept), members (list/role/remove with last-admin rule), platform admin (list/status/stats). Added `TZDateTime` portable type (UTC-aware on SQLite+PG). Test infra (`tests/conftest.py` transaction-per-test + `tests/factories.py`); `tests/test_auth_org.py` (8 tests). Full suite 21 passing.
 - **4.5** — projects & tasks: project CRUD/archive/members with role visibility; task create/assign/update with assignee validation (`ASSIGNEE_NOT_IN_ORG`); status changes with transition rules, history rows, notifications and audit; task list with filters/search/sort/pagination. Fixed SQLite transaction handling (explicit BEGIN) so per-test rollback works. `tests/test_projects_tasks.py` (6 tests). Full suite 27 passing.
+- **4.6** — workflow & approvals: org_admin templates with ordered/validated steps (no step edits once used — deactivate instead); pure `workflow_engine` state machine; submit/list/detail/cancel; decide under `SELECT ... FOR UPDATE` + version bump with per-step authorization, decision history, notifications and audit. `tests/test_workflow_engine.py` (7) + `tests/test_workflow.py` (7). Full suite 42 passing.

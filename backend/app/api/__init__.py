@@ -7,7 +7,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api import auth, organizations, platform, projects, tasks
+from app.api import (
+    approvals,
+    auth,
+    organizations,
+    platform,
+    projects,
+    tasks,
+    workflows,
+)
 
 api_router = APIRouter()
 
@@ -18,3 +26,5 @@ api_router.include_router(organizations.invitations_router)
 api_router.include_router(platform.router)
 api_router.include_router(projects.router)
 api_router.include_router(tasks.router)
+api_router.include_router(workflows.router)
+api_router.include_router(approvals.router)

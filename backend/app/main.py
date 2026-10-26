@@ -45,13 +45,30 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def _validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-        # Normalise FastAPI's default validation error into our standard shape.
+        # Normalise FastAPI's default validation error into our standard shape and
+        # keep it JSON-serializable (Pydantic can attach a raw ValueError in ctx).
+        import json
+
+        def _safe(err: dict) -> dict:
+            out = {
+                "type": err.get("type"),
+                "loc": list(err.get("loc", [])),
+                "msg": err.get("msg"),
+            }
+            value = err.get("input")
+            try:
+                json.dumps(value)
+                out["input"] = value
+            except (TypeError, ValueError):
+                out["input"] = str(value)
+            return out
+
         return JSONResponse(
             status_code=422,
             content={
                 "detail": "Validation error",
                 "code": "VALIDATION_ERROR",
-                "errors": exc.errors(),
+                "errors": [_safe(e) for e in exc.errors()],
             },
         )
 
