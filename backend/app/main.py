@@ -24,8 +24,28 @@ def create_app() -> FastAPI:
         description=(
             "Enterprise SaaS workflow platform: projects, tasks, sequential "
             "approvals, notifications and audit — with strict per-organization "
-            "isolation enforced on the backend."
+            "isolation enforced on the backend.\n\n"
+            "**Authentication:** call `/auth/login`, then `/auth/switch-organization` "
+            "to get a token scoped to one organization. Send it as `Authorization: Bearer <token>`.\n\n"
+            "**Errors:** every error is `{\"detail\": str, \"code\": str}`. Cross-tenant "
+            "IDs return 404."
         ),
+        openapi_tags=[
+            {"name": "meta", "description": "Health and root."},
+            {"name": "auth", "description": "Register, login, current user, workspace switching."},
+            {"name": "organizations", "description": "Create and list organizations."},
+            {"name": "org", "description": "Invitations and members of the active organization."},
+            {"name": "invitations", "description": "Accept an invitation."},
+            {"name": "platform-admin", "description": "Platform-wide administration (requires is_platform_admin)."},
+            {"name": "projects", "description": "Projects and project members."},
+            {"name": "tasks", "description": "Tasks, assignment and status history."},
+            {"name": "workflow-templates", "description": "Ordered approval templates (org_admin)."},
+            {"name": "approvals", "description": "Submit, decide and cancel approval requests."},
+            {"name": "notifications", "description": "In-app notifications."},
+            {"name": "admin", "description": "Administrative/demo actions."},
+            {"name": "audit", "description": "Append-only audit trail (org_admin)."},
+            {"name": "dashboard", "description": "Role-scoped metrics and CSV export."},
+        ],
     )
 
     app.add_middleware(

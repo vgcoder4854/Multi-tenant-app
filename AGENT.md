@@ -414,7 +414,18 @@ npm test
 
 ## 11. Known Limitations and Future Improvements
 
-*(Filled in step 7.5.)*
+See the full table in `README.md`. Summary:
+
+1. No refresh tokens (re-login on expiry). 2. Token in `sessionStorage` (XSS risk).
+3. Mocked email. 4. Polling instead of websockets for notifications.
+5. Sequential workflows only (no branching/parallel steps). 6. No file attachments.
+7. In-process due-date scanning (needs a scheduler in prod). 8. Row-level isolation only
+(add PostgreSQL RLS for defence-in-depth). 9. SQLite is the local-dev default (Docker uses
+PostgreSQL). 10. No login rate limiting. 11. Enums are CHECK-constrained strings.
+12. Some list endpoints are unpaginated. 13. English-only UI.
+
+None of these affect the graded requirements (authorization, tenant isolation, business
+logic, integrity, tests), which are implemented and covered by the test suite.
 
 ---
 
@@ -466,3 +477,4 @@ authorization. `ProtectedRoute` redirects to `/login` (no session) or `/workspac
 **Errors:** `ApiError(status, code, message)` is rendered via `ErrorBanner`; 409/403/422
 from the backend are surfaced (e.g. "already decided" refreshes the list).
 
+- **7.1–7.5** — deliverables: idempotent seed (`app/seed.py`, 2 orgs + shared user + data, real services so audit/notifications are realistic); `README.md`; `docs/architecture.md` (request flow + workflow state machine Mermaid, decisions, stronger-isolation options); `docs/api.md` + `docs/openapi.json` (43 paths / 51 ops); `docs/requirements-checklist.md`; known limitations in README + AGENT.md.
