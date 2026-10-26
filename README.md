@@ -61,6 +61,7 @@ docker compose up --build
 
 - Frontend: http://localhost:3000
 - API docs (Swagger): http://localhost:8000/docs
+- Database UI (pgAdmin): http://localhost:5050  (register server → host `db`, user `app`, password `app`, db `appdb`)
 - The backend waits for PostgreSQL, runs `alembic upgrade head`, then starts.
 
 Seed demo data (inside the running backend container):
