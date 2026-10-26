@@ -99,6 +99,18 @@ export function WorkspacePicker() {
           <Button variant="secondary">Accept an invitation</Button>
         </Link>
       </Card>
+
+      {user?.is_platform_admin && (
+        <Card className="mt-4">
+          <h2 className="mb-1 font-medium">Platform administration</h2>
+          <p className="mb-3 text-sm text-slate-500">
+            You are a platform administrator. Manage organizations across the whole platform.
+          </p>
+          <Link to="/platform">
+            <Button variant="secondary">Open Platform Admin</Button>
+          </Link>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { PlatformShell } from "@/components/layout/PlatformShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AcceptInvite } from "@/pages/AcceptInvite";
 import { AuditLog } from "@/pages/AuditLog";
@@ -66,7 +67,18 @@ export function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/admin/members" element={<Members />} />
         <Route path="/admin/audit" element={<AuditLog />} />
-        <Route path="/platform" element={<PlatformAdmin />} />
+      </Route>
+
+      {/* platform-level: works without an active workspace */}
+      <Route
+        path="/platform"
+        element={
+          <ProtectedRoute requireOrg={false}>
+            <PlatformShell />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<PlatformAdmin />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
