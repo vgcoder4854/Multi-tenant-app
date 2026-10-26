@@ -43,7 +43,7 @@ def create_user(
         is_active=is_active,
     )
     db.add(user)
-    db.flush()
+    db.commit()
     return user
 
 
@@ -51,7 +51,7 @@ def create_org(db: Session, *, name: str | None = None, status: OrgStatus = OrgS
     name = name or f"Org {uuid.uuid4().hex[:6]}"
     org = Organization(name=name, slug=f"org-{uuid.uuid4().hex[:8]}", status=status)
     db.add(org)
-    db.flush()
+    db.commit()
     return org
 
 
@@ -64,7 +64,7 @@ def add_member(
 ) -> Membership:
     membership = Membership(org_id=org.id, user_id=user.id, role=role, status=status)
     db.add(membership)
-    db.flush()
+    db.commit()
     return membership
 
 
@@ -83,14 +83,14 @@ def create_project(
         created_by=created_by.id if created_by else None,
     )
     db.add(project)
-    db.flush()
+    db.commit()
     return project
 
 
 def add_project_member(db: Session, project: Project, user: User) -> ProjectMember:
     member = ProjectMember(org_id=project.org_id, project_id=project.id, user_id=user.id)
     db.add(member)
-    db.flush()
+    db.commit()
     return member
 
 
@@ -117,7 +117,7 @@ def create_task(
         due_date=due_date or (date.today() + timedelta(days=7)),
     )
     db.add(task)
-    db.flush()
+    db.commit()
     return task
 
 
@@ -142,7 +142,7 @@ def create_template(
         created_by=created_by.id if created_by else None,
     )
     db.add(template)
-    db.flush()
+    db.commit()
 
     steps = steps or [{"name": "Manager approval", "approver_type": ApproverType.role, "role": MemberRole.manager}]
     for order, spec in enumerate(steps, start=1):
@@ -157,7 +157,7 @@ def create_template(
                 approver_user_id=spec.get("user_id"),
             )
         )
-    db.flush()
+    db.commit()
     return template
 
 

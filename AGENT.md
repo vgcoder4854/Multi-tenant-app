@@ -135,7 +135,6 @@ PostgreSQL, `RAISE(ABORT)` on SQLite).
 | `app/services/tenant.py` | Tenant-safe helpers | `get_in_org`, `list_query`, `assert_same_org` |
 | `app/core/permissions.py` | Permission matrix | `PERMISSIONS` |
 | `app/services/audit_service.py` | Append-only audit | `record()` |
-| `app/services/notification_service.py` | In-app notifications | `notify()` |
 | `app/services/workflow_engine.py` | Pure state machine | `can_decide`, `next_state` |
 | `app/models/mixins.py` | Shared columns/types | `UUIDMixin`, `CreatedAtMixin`, `TimestampMixin`, `enum_col`, `JSONType`, `utcnow` |
 | `app/models/identity.py` | Group A tables | `User`, `Organization`, `Membership`, `Invitation` |
@@ -148,6 +147,9 @@ PostgreSQL, `RAISE(ABORT)` on SQLite).
 | `app/services/org_service.py` | Orgs, invitations, members | `create_organization`, `list_my_organizations`, `switch_organization`, `invite_member`, `accept_invitation`, `change_member_role`, `remove_member` |
 | `app/services/platform_service.py` | Platform admin | `list_organizations`, `set_organization_status`, `stats` |
 | `app/services/email_service.py` | Mocked email | `send_invitation_email` |
+| `app/services/project_service.py` | Projects + members | `create_project`, `list_projects`, `get_project`, `update_project`, `archive_project`, `add/remove/list_project_members` |
+| `app/services/task_service.py` | Tasks + status history | `create_task`, `update_task`, `change_status`, `get_task`, `list_tasks`, `ALLOWED_TRANSITIONS` |
+| `app/services/notification_service.py` | In-app notifications | `notify()` |
 
 ---
 
@@ -182,6 +184,19 @@ PostgreSQL, `RAISE(ABORT)` on SQLite).
 | report.view | ✅ | ✅ | |
 | member.manage | ✅ | | |
 | dashboard.view | ✅ | ✅ | ✅ |
+
+**Task status transitions** (`app/services/task_service.py::ALLOWED_TRANSITIONS`):
+
+```
+todo        -> in_progress | blocked | completed
+in_progress -> todo | blocked | completed
+blocked     -> todo | in_progress | completed
+completed   -> todo | in_progress        # reopening is allowed (iterative work)
+```
+
+Same status or any other move → 409 `SAME_STATUS` / `INVALID_TRANSITION`. Only the
+assignee, a manager who is a project member, or an org_admin may change status.
+Archived projects are read-only (409 `PROJECT_ARCHIVED`).
 
 *(Exact transition rules and matrix tables added in later steps.)*
 
@@ -337,3 +352,4 @@ npm test
 - **4.3.1** — `app/core/security.py`: Argon2 password hashing, HS256 JWT create/decode with typed errors, invite-token generate/hash. 8 unit tests.
 - **4.4** — security core: `app/api/deps.py` (`get_current_user`, `get_org_context`, `require_roles`, `require_platform_admin`, `OrgContext`), `app/services/tenant.py` (`get_in_org`, `list_query`, `assert_same_org`), `app/core/permissions.py` (matrix). 5 tenant-helper unit tests (two orgs).
 - **4.3.2–4.3.5** — auth & organization management: register/login/me, create org, workspace switching, invitations (invite/list/revoke/accept), members (list/role/remove with last-admin rule), platform admin (list/status/stats). Added `TZDateTime` portable type (UTC-aware on SQLite+PG). Test infra (`tests/conftest.py` transaction-per-test + `tests/factories.py`); `tests/test_auth_org.py` (8 tests). Full suite 21 passing.
+- **4.5** — projects & tasks: project CRUD/archive/members with role visibility; task create/assign/update with assignee validation (`ASSIGNEE_NOT_IN_ORG`); status changes with transition rules, history rows, notifications and audit; task list with filters/search/sort/pagination. Fixed SQLite transaction handling (explicit BEGIN) so per-test rollback works. `tests/test_projects_tasks.py` (6 tests). Full suite 27 passing.
