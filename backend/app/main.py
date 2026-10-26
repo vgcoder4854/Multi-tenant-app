@@ -41,7 +41,7 @@ def create_app() -> FastAPI:
     async def _app_error_handler(_: Request, exc: AppError) -> JSONResponse:
         body: dict = {"detail": exc.detail, "code": exc.code}
         body.update(exc.extra)
-        return JSONResponse(status_code=exc.status_code, content=body)
+        return JSONResponse(status_code=exc.status_code, content=body, headers=exc.headers or None)
 
     @app.exception_handler(RequestValidationError)
     async def _validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse:

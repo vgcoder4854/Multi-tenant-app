@@ -25,6 +25,7 @@ class AppError(Exception):
         status_code: int | None = None,
         code: str | None = None,
         extra: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         self.detail = detail or self.__class__.__doc__ or "Error"
         if status_code is not None:
@@ -32,6 +33,7 @@ class AppError(Exception):
         if code is not None:
             self.code = code
         self.extra = extra or {}
+        self.headers = headers or {}
         super().__init__(self.detail)
 
 

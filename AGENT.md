@@ -70,6 +70,27 @@ dependencies (`get_current_user` → `get_org_context` → `require_roles`) → 
 
 *(Detailed JWT / password-hashing / invitation-flow notes added in step 4.3.)*
 
+- **Password hashing:** Argon2id via `pwdlib`. `hash_password` / `verify_password`
+  never log or return the plaintext; an unknown hash simply fails verification.
+- **JWT flow:** `create_access_token(user_id, org_id=None)` signs an HS256 token with
+  `sub`, `iat`, `exp` and (after workspace selection) `org_id`. `decode_token` raises a
+  typed 401 (`TOKEN_EXPIRED` / `TOKEN_INVALID`).
+- **Invitation flow:** `generate_invite_token()` returns `(raw, hash)`. Only the SHA-256
+  `hash` is stored; the `raw` token is shown once. Accepting an invite matches the hash,
+  checks status/expiry, and creates the membership in one transaction.
+- **Why re-check membership in the DB:** a JWT is a *snapshot*. If an admin removes a
+  member or suspends an org, the old token would still say "member". So `get_org_context`
+  re-reads the active membership and the org status on every request — revocation is
+  immediate.
+
+A protected route in full:
+
+```python
+@router.get("/projects")
+def list_projects(ctx: OrgCtx, db: Session = Depends(get_db)):
+    return project_service.list_projects(db, ctx)   # ctx.org_id is verified, never from the body
+```
+
 ---
 
 ## 4. Modules and Libraries Used
@@ -140,6 +161,22 @@ PostgreSQL, `RAISE(ABORT)` on SQLite).
 - **Workflow:** only the current step's approver may decide; never the requester; final
   requests cannot be decided again (409); all changes atomic under a row lock.
 - **Audit:** append-only; every important action recorded in the same transaction.
+
+**Permission matrix** (`app/core/permissions.py`):
+
+| Action | org_admin | manager | employee |
+| --- | :-: | :-: | :-: |
+| project.create / update / archive | ✅ | | |
+| project.member.manage | ✅ | | |
+| task.create / assign / update | ✅ | ✅ | |
+| task.status_change | ✅ | ✅ | ✅ (own tasks only) |
+| workflow.manage | ✅ | | |
+| request.submit | ✅ | ✅ | ✅ |
+| request.decide | ✅ | ✅ | (per-step check in engine) |
+| audit.view | ✅ | | |
+| report.view | ✅ | ✅ | |
+| member.manage | ✅ | | |
+| dashboard.view | ✅ | ✅ | ✅ |
 
 *(Exact transition rules and matrix tables added in later steps.)*
 
@@ -260,3 +297,5 @@ npm test
 - **DevOps 6.1/6.2 (skeleton)** — `docker-compose.yml` (db+backend+frontend+mailhog), `backend/Dockerfile` + `entrypoint.sh` (waits for DB, runs migrations, starts uvicorn), `frontend/Dockerfile` + `nginx.conf` (SPA fallback), `Makefile`, `scripts/dev_db.py` (embedded PostgreSQL for no-Docker/no-sudo environments).
 - **4.1** — backend scaffold: `app/core/config.py` (pydantic-settings), `app/core/database.py` (engine/SessionLocal/Base/`get_db`), `app/core/errors.py` (typed errors + standard JSON), `app/main.py` (CORS, error handlers, `/health`, `/api/v1`). Verified `/docs` and `/health`.
 - **4.2** — database schema: 14 tables across 4 groups, composite same-org FKs, indexes, partial unique invitation index, append-only audit trigger; 4 Alembic migrations, verified reversible on SQLite and PostgreSQL 16; ER diagram in `docs/er-diagram.md`.
+- **4.3.1** — `app/core/security.py`: Argon2 password hashing, HS256 JWT create/decode with typed errors, invite-token generate/hash. 8 unit tests.
+- **4.4** — security core: `app/api/deps.py` (`get_current_user`, `get_org_context`, `require_roles`, `require_platform_admin`, `OrgContext`), `app/services/tenant.py` (`get_in_org`, `list_query`, `assert_same_org`), `app/core/permissions.py` (matrix). 5 tenant-helper unit tests (two orgs).
