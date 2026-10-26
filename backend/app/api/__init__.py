@@ -12,6 +12,7 @@ from app.api import (
     approvals,
     audit,
     auth,
+    dashboard,
     notifications,
     organizations,
     platform,
@@ -35,3 +36,4 @@ api_router.include_router(notifications.router)
 api_router.include_router(admin.router)
 api_router.include_router(audit.router)
 api_router.include_router(audit.platform_router)
+api_router.include_router(dashboard.router)
