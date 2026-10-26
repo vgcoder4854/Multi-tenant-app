@@ -363,9 +363,30 @@ python scripts/dev_db.py             # prints a DATABASE_URL you can export
 
 **Tests:**
 ```bash
-cd backend && pytest -q            # all suites
+cd backend && pytest -q            # all suites (SQLite test DB, per-test rollback)
 pytest --cov=app --cov-report=term-missing
 ```
+
+Test files: `test_security_utils.py`, `test_tenant_helpers.py`, `test_auth_org.py`,
+`test_projects_tasks.py`, `test_workflow_engine.py`, `test_workflow.py`,
+`test_notifications.py`, `test_audit.py`, `test_dashboard.py`, `test_security.py`.
+Fixtures in `tests/conftest.py`, factories in `tests/factories.py`.
+
+**Mandatory scenarios coverage** (from the assignment):
+
+| # | Scenario | Test |
+| --- | --- | --- |
+| 1 | unauthenticated → 401 on every protected route | `test_security.py::test_scenario1_unauthenticated_is_401` (parametrized) |
+| 2 | Org A requests Org B resource by id → 404, nothing leaks | `test_security.py::test_scenario2_*` |
+| 3 | employee calls admin action → 403, no row changed | `test_security.py::test_scenario3_employee_admin_actions_are_403_and_no_change` |
+| 4 | non-approver tries to approve → 403, state unchanged | `test_workflow.py::test_two_step_approval_success_and_history` |
+| 5 | final request cannot be decided again → 409 | `test_workflow.py::test_two_step_approval_success_and_history` |
+| 6 | assign non-member → 422, assignee unchanged | `test_projects_tasks.py::test_task_create_assign_and_validate_assignee` |
+| 7 | approval history recorded correctly | `test_workflow.py::test_two_step_approval_success_and_history` |
+| 8 | failed op leaves no partial records | `test_workflow.py::test_rollback_leaves_no_partial_records` |
+| 9 | notifications only to intended recipients | `test_notifications.py::test_assignment_notifies_assignee_not_actor` |
+| 10 | audit records actor/org/action/resource | `test_audit.py::test_audit_records_actor_org_action_resource` |
+| extra | suspended org, last-admin, duplicate invite, audit append-only | `test_auth_org.py`, `test_audit.py` |
 
 **Frontend:**
 ```bash
@@ -411,3 +432,4 @@ npm test
 - **4.7** — notifications: list/unread-count/read/read-all (tenant + owner scoped), due/overdue scan (`app/jobs/due_scan.py`) with per-task-per-day de-duplication, org_admin `POST /admin/run-due-scan`. `tests/test_notifications.py` (6). Full suite 48 passing.
 - **4.8** — audit trail: `record()` called from every service (all action names listed in AGENT.md §8), read endpoints `GET /audit-logs` (org_admin) and `GET /platform/audit-logs` (platform admin), append-only verified at DB level. `tests/test_audit.py` (5). Full suite 53 passing.
 - **4.9** — dashboard & reporting: role-scoped SQL-aggregate summary (projects, tasks by status, my/overdue tasks, approvals) with filters, and a tenant-scoped CSV export. `tests/test_dashboard.py` (4). Full suite 57 passing.
+- **4.10** — backend test suite complete: added `tests/test_security.py` (48 parametrized 401 checks + cross-tenant read/write/list/search + employee-403). Backend suite **108 tests, 88% coverage**, all mandatory scenarios mapped (see §9).
