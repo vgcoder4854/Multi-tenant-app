@@ -116,6 +116,12 @@ PostgreSQL, `RAISE(ABORT)` on SQLite).
 | `app/services/audit_service.py` | Append-only audit | `record()` |
 | `app/services/notification_service.py` | In-app notifications | `notify()` |
 | `app/services/workflow_engine.py` | Pure state machine | `can_decide`, `next_state` |
+| `app/models/mixins.py` | Shared columns/types | `UUIDMixin`, `CreatedAtMixin`, `TimestampMixin`, `enum_col`, `JSONType`, `utcnow` |
+| `app/models/identity.py` | Group A tables | `User`, `Organization`, `Membership`, `Invitation` |
+| `app/models/work.py` | Group B tables | `Project`, `ProjectMember`, `Task`, `TaskStatusHistory` |
+| `app/models/workflow.py` | Group C tables | `WorkflowTemplate`, `WorkflowStep`, `ApprovalRequest`, `ApprovalDecision` |
+| `app/models/comms.py` | Group D tables | `Notification`, `AuditLog` |
+| `app/models/registry.py` | Registers every model | imported by Alembic |
 
 ---
 
@@ -146,7 +152,40 @@ B) work (`projects`, `project_members`, `tasks`, `task_status_history`);
 C) workflow (`workflow_templates`, `workflow_steps`, `approval_requests`, `approval_decisions`);
 D) comms/compliance (`notifications`, `audit_logs`).
 
-*(Full ER description, index list and constraint reasons added in step 4.2.)*
+Full ER diagram: `docs/er-diagram.md`.
+
+**Migrations** (`backend/alembic/versions/`, applied with `alembic upgrade head`):
+
+| Rev | Step | Tables |
+| --- | --- | --- |
+| `7dc57edff646` | 4.2.1 | users, organizations, memberships, invitations |
+| `ee8978ef4f55` | 4.2.2 | projects, project_members, tasks, task_status_history |
+| `1a56dc8b2ff7` | 4.2.3 | workflow_templates, workflow_steps, approval_requests, approval_decisions |
+| `37108ea71cca` | 4.2.4 | notifications, audit_logs + append-only trigger |
+
+Verified reversible: `alembic downgrade base` then `alembic upgrade head` both succeed
+on SQLite **and** PostgreSQL 16.
+
+**Constraints and indexes (and why):**
+
+| Object | Reason |
+| --- | --- |
+| `organizations.slug` UNIQUE | human-friendly unique handle |
+| `users.email` UNIQUE (+ lowercased on write) | one account per email, case-insensitive |
+| `memberships` UNIQUE(org_id, user_id) | no duplicate membership |
+| `memberships` UNIQUE(org_id, id) | target for composite FKs |
+| `invitations` partial UNIQUE(org_id, email) WHERE status='pending' | one pending invite per email/org |
+| `projects` UNIQUE(org_id, name) | no duplicate project names within an org |
+| `tasks/projects/templates/requests` UNIQUE(org_id, id) | targets for composite FKs |
+| `tasks` FK(org_id, project_id)→projects(org_id,id) | task's project is same-org (DB-enforced) |
+| `tasks` FK(org_id, assignee_id)→memberships(org_id,user_id) | assignee is a same-org member |
+| `project_members` FK(org_id, project_id), FK(org_id, user_id) | member + project same-org |
+| `task_status_history` FK(org_id, task_id) | history row same-org as its task |
+| `workflow_steps` UNIQUE(template_id, step_order), CHECK step_order>=1, CHECK approver column matches type | contiguous ordered steps; exactly one approver source |
+| `approval_requests` FK(org_id, template_id), `version` | same-org template; optimistic lock |
+| `approval_decisions` UNIQUE(request_id, step_order) | one decision per step |
+| `audit_logs` trigger | append-only (no UPDATE/DELETE) |
+| Indexes | `tasks(org_id,status)`, `(org_id,assignee_id)`, `(org_id,project_id)`, `(org_id,due_date)`; `notifications(user_id,is_read,created_at)`; `audit_logs(org_id,created_at)`; `approval_requests(org_id,status)` — all match the common query filters. |
 
 ---
 
@@ -203,6 +242,9 @@ npm test
 | 4 | `SELECT ... FOR UPDATE` + `version` on decide | version only | Prevents concurrent double decisions; lock is simplest correct approach. |
 | 5 | Portable types (SQLite dev, Postgres prod) | Postgres-only | Zero-setup local dev while keeping the real Postgres path for Docker/prod. Enums are CHECK-constrained strings (allowed by spec). |
 | 6 | `org_id` never read from request body | trust token claim | Token claims are re-verified against the DB membership each request. |
+| 7 | Four migrations, one per schema group | one big initial migration | Matches the playbook's 4.2.1–4.2.4 steps; easier to review; still fully reversible. |
+| 8 | Normalise email to lowercase on write + plain partial unique index | functional `lower(email)` index | Equivalent result, portable to SQLite (functional indexes are fiddly there). |
+| 9 | Composite `(org_id, id)` unique keys + composite FKs | app-level checks only | Lets the *database* refuse cross-org rows, not just the service layer. |
 
 ---
 
@@ -215,3 +257,6 @@ npm test
 ## 12. Change Log
 
 - **L0** — repo initialised, folder layout created, `.gitignore`, `.env.example`, `AGENT.md` skeleton.
+- **DevOps 6.1/6.2 (skeleton)** — `docker-compose.yml` (db+backend+frontend+mailhog), `backend/Dockerfile` + `entrypoint.sh` (waits for DB, runs migrations, starts uvicorn), `frontend/Dockerfile` + `nginx.conf` (SPA fallback), `Makefile`, `scripts/dev_db.py` (embedded PostgreSQL for no-Docker/no-sudo environments).
+- **4.1** — backend scaffold: `app/core/config.py` (pydantic-settings), `app/core/database.py` (engine/SessionLocal/Base/`get_db`), `app/core/errors.py` (typed errors + standard JSON), `app/main.py` (CORS, error handlers, `/health`, `/api/v1`). Verified `/docs` and `/health`.
+- **4.2** — database schema: 14 tables across 4 groups, composite same-org FKs, indexes, partial unique invitation index, append-only audit trigger; 4 Alembic migrations, verified reversible on SQLite and PostgreSQL 16; ER diagram in `docs/er-diagram.md`.
