@@ -143,6 +143,11 @@ PostgreSQL, `RAISE(ABORT)` on SQLite).
 | `app/models/workflow.py` | Group C tables | `WorkflowTemplate`, `WorkflowStep`, `ApprovalRequest`, `ApprovalDecision` |
 | `app/models/comms.py` | Group D tables | `Notification`, `AuditLog` |
 | `app/models/registry.py` | Registers every model | imported by Alembic |
+| `app/core/errors.py` | Typed business errors | `AppError`, `UnauthorizedError`, `ForbiddenError`, `OrgSuspendedError`, `NotFoundError`, `ConflictError`, `ValidationError` |
+| `app/services/auth_service.py` | Register / login / me | `register`, `authenticate`, `build_me` |
+| `app/services/org_service.py` | Orgs, invitations, members | `create_organization`, `list_my_organizations`, `switch_organization`, `invite_member`, `accept_invitation`, `change_member_role`, `remove_member` |
+| `app/services/platform_service.py` | Platform admin | `list_organizations`, `set_organization_status`, `stats` |
+| `app/services/email_service.py` | Mocked email | `send_invitation_email` |
 
 ---
 
@@ -228,7 +233,39 @@ on SQLite **and** PostgreSQL 16.
 
 ## 8. API Reference Summary
 
-*(Full table in `docs/api.md`; built in steps 4.3–4.9.)*
+All paths are under `/api/v1`. Full table in `docs/api.md`.
+
+### Auth (tag `auth`)
+| Method | Path | Auth | Success | Errors |
+| --- | --- | --- | --- | --- |
+| POST | `/auth/register` | none | 201 UserOut | 409 EMAIL_TAKEN, 422 |
+| POST | `/auth/login` | none | 200 TokenResponse | 401 INVALID_CREDENTIALS / USER_INACTIVE |
+| GET | `/auth/me` | token | 200 MeOut | 401 |
+| POST | `/auth/switch-organization` | token | 200 TokenResponse | 401, 403 NOT_A_MEMBER |
+
+### Organizations / members / invitations
+| Method | Path | Role | Success | Errors |
+| --- | --- | --- | --- | --- |
+| POST | `/organizations` | any user | 201 OrganizationOut | 409 SLUG_TAKEN |
+| GET | `/organizations/mine` | any user | 200 [MyOrganizationOut] | 401 |
+| POST | `/org/invitations` | org_admin | 201 InvitationCreatedOut (with raw token) | 409 ALREADY_MEMBER / INVITATION_EXISTS |
+| GET | `/org/invitations` | org_admin | 200 [InvitationOut] | 403 |
+| DELETE | `/org/invitations/{id}` | org_admin | 204 | 404, 409 INVITATION_NOT_PENDING |
+| GET | `/org/members` | any member | 200 [MemberOut] | 403 |
+| PATCH | `/org/members/{user_id}/role` | org_admin | 200 MemberOut | 404, 409 LAST_ADMIN |
+| DELETE | `/org/members/{user_id}` | org_admin | 204 | 404, 409 LAST_ADMIN |
+| POST | `/invitations/accept` | token | 200 OrganizationOut | 403 EMAIL_MISMATCH, 404, 409, 422 EXPIRED |
+
+### Platform admin (tag `platform-admin`)
+| Method | Path | Auth | Success |
+| --- | --- | --- | --- |
+| GET | `/platform/organizations` | platform admin | 200 Page[OrganizationOut] (filter status, name) |
+| PATCH | `/platform/organizations/{id}/status` | platform admin | 200 OrganizationOut (audited) |
+| GET | `/platform/stats` | platform admin | 200 counts |
+
+**Where suspension is enforced:** `get_org_context` (`app/api/deps.py`) rejects a
+suspended org with 403 `ORG_SUSPENDED` on every tenant endpoint. `switch-organization`
+still succeeds (so the UI can show a clear "suspended" page).
 
 ---
 
@@ -299,3 +336,4 @@ npm test
 - **4.2** — database schema: 14 tables across 4 groups, composite same-org FKs, indexes, partial unique invitation index, append-only audit trigger; 4 Alembic migrations, verified reversible on SQLite and PostgreSQL 16; ER diagram in `docs/er-diagram.md`.
 - **4.3.1** — `app/core/security.py`: Argon2 password hashing, HS256 JWT create/decode with typed errors, invite-token generate/hash. 8 unit tests.
 - **4.4** — security core: `app/api/deps.py` (`get_current_user`, `get_org_context`, `require_roles`, `require_platform_admin`, `OrgContext`), `app/services/tenant.py` (`get_in_org`, `list_query`, `assert_same_org`), `app/core/permissions.py` (matrix). 5 tenant-helper unit tests (two orgs).
+- **4.3.2–4.3.5** — auth & organization management: register/login/me, create org, workspace switching, invitations (invite/list/revoke/accept), members (list/role/remove with last-admin rule), platform admin (list/status/stats). Added `TZDateTime` portable type (UTC-aware on SQLite+PG). Test infra (`tests/conftest.py` transaction-per-test + `tests/factories.py`); `tests/test_auth_org.py` (8 tests). Full suite 21 passing.

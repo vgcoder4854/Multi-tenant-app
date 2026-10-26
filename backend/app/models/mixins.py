@@ -9,7 +9,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, Enum as SAEnum, Uuid
+from sqlalchemy import JSON, DateTime, Enum as SAEnum, TypeDecorator, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +17,28 @@ from sqlalchemy.orm import Mapped, mapped_column
 def utcnow() -> datetime:
     """Timezone-aware UTC now (used as a Python-side default)."""
     return datetime.now(timezone.utc)
+
+
+class TZDateTime(TypeDecorator):
+    """A timezone-aware DateTime that is UTC-aware on every dialect.
+
+    PostgreSQL ``timestamptz`` already round-trips aware values; SQLite drops the
+    offset, so this decorator re-attaches UTC on read and coerces on write. This
+    keeps comparisons like ``row.expires_at <= utcnow()`` correct everywhere.
+    """
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect):
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+
+    def process_result_value(self, value: datetime | None, dialect):
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
 
 
 # JSON on SQLite, JSONB on PostgreSQL (better indexing/operators on PG).
@@ -44,12 +66,10 @@ class UUIDMixin:
 
 
 class CreatedAtMixin:
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(TZDateTime, default=utcnow, nullable=False)
 
 
 class TimestampMixin(CreatedAtMixin):
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
+        TZDateTime, default=utcnow, onupdate=utcnow, nullable=False
     )

@@ -11,7 +11,6 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
-    DateTime,
     ForeignKey,
     Index,
     String,
@@ -22,7 +21,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.core.database import Base
 from app.models.enums import InvitationStatus, MemberRole, MemberStatus, OrgStatus
-from app.models.mixins import CreatedAtMixin, UUIDMixin, enum_col
+from app.models.mixins import CreatedAtMixin, TZDateTime, UUIDMixin, enum_col
 
 
 class User(Base, UUIDMixin, CreatedAtMixin):
@@ -96,7 +95,7 @@ class Invitation(Base, UUIDMixin, CreatedAtMixin):
     invited_by: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(TZDateTime, nullable=False)
 
     __table_args__ = (
         # One pending invitation per email per org. Emails are stored lowercased,

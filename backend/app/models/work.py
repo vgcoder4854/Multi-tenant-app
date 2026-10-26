@@ -13,7 +13,6 @@ from datetime import date, datetime
 
 from sqlalchemy import (
     Date,
-    DateTime,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
@@ -26,7 +25,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.models.enums import ProjectStatus, TaskPriority, TaskStatus
-from app.models.mixins import CreatedAtMixin, TimestampMixin, UUIDMixin, enum_col, utcnow
+from app.models.mixins import CreatedAtMixin, TimestampMixin, TZDateTime, UUIDMixin, enum_col, utcnow
 
 
 class Project(Base, UUIDMixin, TimestampMixin):
@@ -133,7 +132,7 @@ class TaskStatusHistory(Base, UUIDMixin):
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     changed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, nullable=False
+        TZDateTime, default=utcnow, nullable=False
     )
 
     __table_args__ = (

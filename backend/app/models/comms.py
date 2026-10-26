@@ -13,12 +13,12 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, Uuid
+from sqlalchemy import ForeignKey, Index, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.models.enums import NotificationType
-from app.models.mixins import CreatedAtMixin, JSONType, UUIDMixin, enum_col, utcnow
+from app.models.mixins import CreatedAtMixin, JSONType, TZDateTime, UUIDMixin, enum_col, utcnow
 
 
 class Notification(Base, UUIDMixin, CreatedAtMixin):
@@ -38,7 +38,7 @@ class Notification(Base, UUIDMixin, CreatedAtMixin):
     resource_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     resource_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
     is_read: Mapped[bool] = mapped_column(default=False, nullable=False)
-    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    read_at: Mapped[datetime | None] = mapped_column(TZDateTime, nullable=True)
 
     __table_args__ = (
         Index("ix_notification_user_read_created", "user_id", "is_read", "created_at"),
@@ -60,7 +60,7 @@ class AuditLog(Base, UUIDMixin):
     resource_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
     meta: Mapped[dict[str, Any]] = mapped_column("metadata", JSONType, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, nullable=False
+        TZDateTime, default=utcnow, nullable=False
     )
 
     __table_args__ = (

@@ -14,7 +14,6 @@ from typing import Any
 
 from sqlalchemy import (
     CheckConstraint,
-    DateTime,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
@@ -28,7 +27,15 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.enums import ApproverType, DecisionType, MemberRole, RequestStatus
-from app.models.mixins import CreatedAtMixin, JSONType, TimestampMixin, UUIDMixin, enum_col, utcnow
+from app.models.mixins import (
+    CreatedAtMixin,
+    JSONType,
+    TimestampMixin,
+    TZDateTime,
+    UUIDMixin,
+    enum_col,
+    utcnow,
+)
 
 
 class WorkflowTemplate(Base, UUIDMixin, TimestampMixin):
@@ -111,9 +118,9 @@ class ApprovalRequest(Base, UUIDMixin):
     )
     current_step_order: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     submitted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, nullable=False
+        TZDateTime, default=utcnow, nullable=False
     )
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(TZDateTime, nullable=True)
     # Optimistic locking: two approvers cannot both advance the same version.
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
@@ -150,7 +157,7 @@ class ApprovalDecision(Base, UUIDMixin):
     decision: Mapped[DecisionType] = mapped_column(enum_col(DecisionType, "decision_type"), nullable=False)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, nullable=False
+        TZDateTime, default=utcnow, nullable=False
     )
 
     request: Mapped[ApprovalRequest] = relationship(back_populates="decisions")

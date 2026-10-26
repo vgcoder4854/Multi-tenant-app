@@ -7,6 +7,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.api import auth, organizations, platform
+
 api_router = APIRouter()
 
-# Feature routers are registered here as each module is built (4.3+).
+api_router.include_router(auth.router)
+api_router.include_router(organizations.organizations_router)
+api_router.include_router(organizations.org_router)
+api_router.include_router(organizations.invitations_router)
+api_router.include_router(platform.router)
