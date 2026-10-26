@@ -312,6 +312,19 @@ still succeeds (so the UI can show a clear "suspended" page).
 | POST | `/notifications/read-all` | any member | 200 `{unread}` | marks all caller's unread |
 | POST | `/admin/run-due-scan` | org_admin | 200 counts | demo trigger; prod uses `python -m app.jobs.due_scan` |
 
+### Audit (tag `audit` / `platform-admin`)
+| Method | Path | Who | Success |
+| --- | --- | --- | --- |
+| GET | `/audit-logs` | org_admin | 200 Page (filters: actor_id, action, resource_type, date_from, date_to) |
+| GET | `/platform/audit-logs` | platform admin | 200 Page (optional `org_id`) |
+
+**Audit action names** (`app/services/audit_service.py`):
+`org.created/suspended/activated`, `invitation.created/revoked/accepted`,
+`member.role_changed/removed`, `project.created/updated/archived`,
+`project.member_added/removed`, `task.created/updated/assigned/status_changed`,
+`workflow.template_created/updated/deactivated`,
+`request.submitted/step_approved/approved/rejected/cancelled`.
+
 ---
 
 ## 9. How to Run and Test
@@ -385,3 +398,4 @@ npm test
 - **4.5** — projects & tasks: project CRUD/archive/members with role visibility; task create/assign/update with assignee validation (`ASSIGNEE_NOT_IN_ORG`); status changes with transition rules, history rows, notifications and audit; task list with filters/search/sort/pagination. Fixed SQLite transaction handling (explicit BEGIN) so per-test rollback works. `tests/test_projects_tasks.py` (6 tests). Full suite 27 passing.
 - **4.6** — workflow & approvals: org_admin templates with ordered/validated steps (no step edits once used — deactivate instead); pure `workflow_engine` state machine; submit/list/detail/cancel; decide under `SELECT ... FOR UPDATE` + version bump with per-step authorization, decision history, notifications and audit. `tests/test_workflow_engine.py` (7) + `tests/test_workflow.py` (7). Full suite 42 passing.
 - **4.7** — notifications: list/unread-count/read/read-all (tenant + owner scoped), due/overdue scan (`app/jobs/due_scan.py`) with per-task-per-day de-duplication, org_admin `POST /admin/run-due-scan`. `tests/test_notifications.py` (6). Full suite 48 passing.
+- **4.8** — audit trail: `record()` called from every service (all action names listed in AGENT.md §8), read endpoints `GET /audit-logs` (org_admin) and `GET /platform/audit-logs` (platform admin), append-only verified at DB level. `tests/test_audit.py` (5). Full suite 53 passing.

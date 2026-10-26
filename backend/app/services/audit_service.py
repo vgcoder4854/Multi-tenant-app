@@ -10,8 +10,10 @@ Store only safe metadata (ids, names, statuses) — never passwords or tokens.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Any
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.comms import AuditLog
@@ -76,3 +78,44 @@ REQUEST_STEP_APPROVED = "request.step_approved"
 REQUEST_APPROVED = "request.approved"
 REQUEST_REJECTED = "request.rejected"
 REQUEST_CANCELLED = "request.cancelled"
+
+
+# --------------------------------------------------------------------------- #
+# Read helpers (used by the audit API)
+# --------------------------------------------------------------------------- #
+def list_audit_logs(
+    db: Session,
+    *,
+    org_id: uuid.UUID | None = None,
+    actor_id: uuid.UUID | None = None,
+    action: str | None = None,
+    resource_type: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[AuditLog], int]:
+    """Newest-first audit rows. ``org_id=None`` means "all orgs" (platform admin)."""
+    stmt = select(AuditLog)
+    if org_id is not None:
+        stmt = stmt.where(AuditLog.org_id == org_id)
+    if actor_id is not None:
+        stmt = stmt.where(AuditLog.actor_id == actor_id)
+    if action:
+        stmt = stmt.where(AuditLog.action == action)
+    if resource_type:
+        stmt = stmt.where(AuditLog.resource_type == resource_type)
+    if date_from is not None:
+        stmt = stmt.where(AuditLog.created_at >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(AuditLog.created_at <= date_to)
+
+    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
+    rows = (
+        db.execute(
+            stmt.order_by(AuditLog.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        ).scalars().all()
+    )
+    return list(rows), total

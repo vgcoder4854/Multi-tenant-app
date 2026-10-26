@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from app.api import (
     admin,
     approvals,
+    audit,
     auth,
     notifications,
     organizations,
@@ -32,3 +33,5 @@ api_router.include_router(workflows.router)
 api_router.include_router(approvals.router)
 api_router.include_router(notifications.router)
 api_router.include_router(admin.router)
+api_router.include_router(audit.router)
+api_router.include_router(audit.platform_router)
