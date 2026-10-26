@@ -72,7 +72,7 @@ def seed(db: Session) -> None:
         return
 
     # --- Platform admin ---
-    _user(db, "platform@demo.test", "Pat Platform", platform_admin=True)
+    _user(db, "platform@demo.example.com", "Pat Platform", platform_admin=True)
 
     # --- Organizations ---
     acme = Organization(name="Acme Leave Co", slug=ACME_SLUG)
@@ -83,19 +83,19 @@ def seed(db: Session) -> None:
     # --- Users per org ---
     def make_team(prefix: str) -> dict[str, User]:
         return {
-            "admin": _user(db, f"admin.{prefix}@demo.test", f"{prefix.title()} Admin"),
-            "manager1": _user(db, f"manager1.{prefix}@demo.test", f"{prefix.title()} Manager One"),
-            "manager2": _user(db, f"manager2.{prefix}@demo.test", f"{prefix.title()} Manager Two"),
-            "emp1": _user(db, f"emp1.{prefix}@demo.test", f"{prefix.title()} Employee One"),
-            "emp2": _user(db, f"emp2.{prefix}@demo.test", f"{prefix.title()} Employee Two"),
-            "emp3": _user(db, f"emp3.{prefix}@demo.test", f"{prefix.title()} Employee Three"),
+            "admin": _user(db, f"admin.{prefix}@demo.example.com", f"{prefix.title()} Admin"),
+            "manager1": _user(db, f"manager1.{prefix}@demo.example.com", f"{prefix.title()} Manager One"),
+            "manager2": _user(db, f"manager2.{prefix}@demo.example.com", f"{prefix.title()} Manager Two"),
+            "emp1": _user(db, f"emp1.{prefix}@demo.example.com", f"{prefix.title()} Employee One"),
+            "emp2": _user(db, f"emp2.{prefix}@demo.example.com", f"{prefix.title()} Employee Two"),
+            "emp3": _user(db, f"emp3.{prefix}@demo.example.com", f"{prefix.title()} Employee Three"),
         }
 
     acme_team = make_team("acme")
     globex_team = make_team("globex")
 
     # A user who belongs to BOTH orgs with different roles (workspace-switch demo).
-    shared = _user(db, "shared.user@demo.test", "Sam Shared")
+    shared = _user(db, "shared.user@demo.example.com", "Sam Shared")
 
     for org, team in ((acme, acme_team), (globex, globex_team)):
         _member(db, org, team["admin"], MemberRole.org_admin)
@@ -222,20 +222,20 @@ def seed(db: Session) -> None:
     print(f"{'Email':<32}{'Role / Org'}")
     print("-" * 60)
     rows = [
-        ("platform@demo.test", "Platform Administrator"),
-        ("admin.acme@demo.test", "org_admin @ Acme Leave Co"),
-        ("manager1.acme@demo.test", "manager @ Acme Leave Co"),
-        ("manager2.acme@demo.test", "manager @ Acme Leave Co"),
-        ("emp1.acme@demo.test", "employee @ Acme Leave Co"),
-        ("emp2.acme@demo.test", "employee @ Acme Leave Co"),
-        ("emp3.acme@demo.test", "employee @ Acme Leave Co"),
-        ("admin.globex@demo.test", "org_admin @ Globex Purchasing"),
-        ("manager1.globex@demo.test", "manager @ Globex Purchasing"),
-        ("manager2.globex@demo.test", "manager @ Globex Purchasing"),
-        ("emp1.globex@demo.test", "employee @ Globex Purchasing"),
-        ("emp2.globex@demo.test", "employee @ Globex Purchasing"),
-        ("emp3.globex@demo.test", "employee @ Globex Purchasing"),
-        ("shared.user@demo.test", "manager @ Acme  +  employee @ Globex (switch demo)"),
+        ("platform@demo.example.com", "Platform Administrator"),
+        ("admin.acme@demo.example.com", "org_admin @ Acme Leave Co"),
+        ("manager1.acme@demo.example.com", "manager @ Acme Leave Co"),
+        ("manager2.acme@demo.example.com", "manager @ Acme Leave Co"),
+        ("emp1.acme@demo.example.com", "employee @ Acme Leave Co"),
+        ("emp2.acme@demo.example.com", "employee @ Acme Leave Co"),
+        ("emp3.acme@demo.example.com", "employee @ Acme Leave Co"),
+        ("admin.globex@demo.example.com", "org_admin @ Globex Purchasing"),
+        ("manager1.globex@demo.example.com", "manager @ Globex Purchasing"),
+        ("manager2.globex@demo.example.com", "manager @ Globex Purchasing"),
+        ("emp1.globex@demo.example.com", "employee @ Globex Purchasing"),
+        ("emp2.globex@demo.example.com", "employee @ Globex Purchasing"),
+        ("emp3.globex@demo.example.com", "employee @ Globex Purchasing"),
+        ("shared.user@demo.example.com", "manager @ Acme  +  employee @ Globex (switch demo)"),
     ]
     for email, role in rows:
         print(f"{email:<32}{role}")

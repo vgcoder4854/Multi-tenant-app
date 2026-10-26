@@ -122,14 +122,14 @@ All demo accounts use the password **`Password123!`** (synthetic data only).
 
 | Email | Role |
 | --- | --- |
-| `platform@demo.test` | Platform Administrator |
-| `admin.acme@demo.test` | org_admin @ Acme Leave Co |
-| `manager1.acme@demo.test` / `manager2.acme@demo.test` | manager @ Acme Leave Co |
-| `emp1.acme@demo.test` / `emp2.acme@demo.test` / `emp3.acme@demo.test` | employee @ Acme Leave Co |
-| `admin.globex@demo.test` | org_admin @ Globex Purchasing |
-| `manager1.globex@demo.test` / `manager2.globex@demo.test` | manager @ Globex Purchasing |
-| `emp1.globex@demo.test` / `emp2.globex@demo.test` / `emp3.globex@demo.test` | employee @ Globex Purchasing |
-| `shared.user@demo.test` | manager @ Acme **and** employee @ Globex (workspace-switch demo) |
+| `platform@demo.example.com` | Platform Administrator |
+| `admin.acme@demo.example.com` | org_admin @ Acme Leave Co |
+| `manager1.acme@demo.example.com` / `manager2.acme@demo.example.com` | manager @ Acme Leave Co |
+| `emp1.acme@demo.example.com` / `emp2.acme@demo.example.com` / `emp3.acme@demo.example.com` | employee @ Acme Leave Co |
+| `admin.globex@demo.example.com` | org_admin @ Globex Purchasing |
+| `manager1.globex@demo.example.com` / `manager2.globex@demo.example.com` | manager @ Globex Purchasing |
+| `emp1.globex@demo.example.com` / `emp2.globex@demo.example.com` / `emp3.globex@demo.example.com` | employee @ Globex Purchasing |
+| `shared.user@demo.example.com` | manager @ Acme **and** employee @ Globex (workspace-switch demo) |
 
 ## Project structure
 

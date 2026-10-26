@@ -62,10 +62,9 @@ at the DB level (`test_audit.py::test_audit_is_append_only_at_db_level`).
 
 ## Gaps / deviations (documented)
 
-- **⚠️ Docker not executed in the build environment.** `docker-compose.yml`, `Dockerfile`s
-  and the `Makefile` are provided and correct, but were not run here (no Docker in the
-  sandbox). The PostgreSQL path was instead verified with an embedded PostgreSQL 16
-  (`scripts/pg_smoke.py`) and the full SQLite suite.
+- **✅ Docker verified.** `docker compose up --build` was executed: db (PostgreSQL 16, healthy),
+  backend (migrations + uvicorn on :8000), frontend (nginx SPA on :3000) and mailhog. A live
+  API round-trip and cross-tenant isolation checks passed on the containerized stack.
 - **⚠️ Migrations:** one initial migration per schema group (4 files) rather than
   per-table; still fully reversible on SQLite and PostgreSQL.
 - **⚠️ Email is mocked** (`services/email_service.py`) — by design, per the assignment.

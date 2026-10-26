@@ -7,9 +7,10 @@ is hard-coded, so the same image runs in dev, test and production. See
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -32,7 +33,11 @@ class Settings(BaseSettings):
 
     # --- App ---
     environment: str = "development"
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    # NoDecode: accept a comma-separated string instead of requiring JSON.
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
 
     @field_validator("cors_origins", mode="before")
     @classmethod

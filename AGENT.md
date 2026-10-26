@@ -409,6 +409,7 @@ npm test
 | 7 | Four migrations, one per schema group | one big initial migration | Matches the playbook's 4.2.1–4.2.4 steps; easier to review; still fully reversible. |
 | 8 | Normalise email to lowercase on write + plain partial unique index | functional `lower(email)` index | Equivalent result, portable to SQLite (functional indexes are fiddly there). |
 | 9 | Composite `(org_id, id)` unique keys + composite FKs | app-level checks only | Lets the *database* refuse cross-org rows, not just the service layer. |
+| 10 | `CORS_ORIGINS` parsed with pydantic-settings `NoDecode` + a comma-split validator | JSON list in env | pydantic-settings tries to JSON-decode list fields and crashes on `a,b`; `NoDecode` + split is friendlier for `.env`/compose. |
 
 ---
 
@@ -479,3 +480,6 @@ from the backend are surfaced (e.g. "already decided" refreshes the list).
 
 - **7.1–7.5** — deliverables: idempotent seed (`app/seed.py`, 2 orgs + shared user + data, real services so audit/notifications are realistic); `README.md`; `docs/architecture.md` (request flow + workflow state machine Mermaid, decisions, stronger-isolation options); `docs/api.md` + `docs/openapi.json` (43 paths / 51 ops); `docs/requirements-checklist.md`; known limitations in README + AGENT.md.
 - **Final review (8.5)** — strict pass: every tenant query confirmed org-scoped; no hardcoded secrets; ruff cleanliness fixes (unused imports, deprecated import, collapsed nested if); Docker `.dockerignore` added; re-verified backend (108 tests), frontend (tsc + 16 tests) and the PostgreSQL smoke test.
+- **Docker verified end-to-end** — `docker compose up --build` runs db + backend + frontend + mailhog; backend waits for the DB, runs migrations on PostgreSQL 16, serves `/docs`; frontend serves the SPA on :3000 with the API URL baked in; seed runs in the container; live API round-trip (login → switch → projects/tasks/dashboard/audit → submit+approve a request) and cross-tenant 404s all confirmed.
+  - Fixed: `CORS_ORIGINS` comma value crashed pydantic-settings (added `NoDecode` + split validator) — this had stopped the backend container.
+  - Fixed: demo emails used the reserved `.test` TLD which `email-validator` rejects on login/register; changed to `@demo.example.com` (seed, README).
