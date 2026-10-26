@@ -13,8 +13,9 @@ State machine:
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Protocol, Sequence
+from typing import Protocol
 
 from app.core.errors import ConflictError, ForbiddenError
 from app.models.enums import ApproverType, DecisionType, MemberRole, RequestStatus

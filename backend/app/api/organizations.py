@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import CurrentUser, OrgContext, OrgCtx, get_org_context, require_roles
+from app.api.deps import CurrentUser, OrgContext, OrgCtx, require_roles
 from app.core.database import get_db
 from app.models.enums import MemberRole
 from app.models.identity import Organization

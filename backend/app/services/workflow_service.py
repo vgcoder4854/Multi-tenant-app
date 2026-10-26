@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.models.enums import (
     ApproverType,
-    DecisionType,
     MemberRole,
     MemberStatus,
     NotificationType,

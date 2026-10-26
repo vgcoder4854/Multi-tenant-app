@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 

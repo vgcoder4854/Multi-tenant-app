@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pytest
 
@@ -23,7 +23,7 @@ class Step:
 class Request:
     status: RequestStatus = RequestStatus.pending
     current_step_order: int = 1
-    requester_id: uuid.UUID = uuid.uuid4()
+    requester_id: uuid.UUID = field(default_factory=uuid.uuid4)
 
 
 def _role_step(order=1, role=MemberRole.manager):
@@ -42,7 +42,7 @@ def test_role_approver_can_decide():
 
 def test_wrong_role_cannot_decide():
     req = Request()
-    ok, reason = eng.can_decide(req, _role_step(), user_id=uuid.uuid4(), role=MemberRole.employee)
+    ok, _reason = eng.can_decide(req, _role_step(), user_id=uuid.uuid4(), role=MemberRole.employee)
     assert not ok
 
 

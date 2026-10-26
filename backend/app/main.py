@@ -99,7 +99,7 @@ def create_app() -> FastAPI:
         try:
             db.execute(text("SELECT 1"))
             db_status = "ok"
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             db_status = f"error: {exc}"
         finally:
             db.close()

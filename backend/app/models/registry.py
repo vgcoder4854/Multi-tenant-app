@@ -5,6 +5,6 @@ registered. Importing this module has the side effect of registering all tables.
 """
 from __future__ import annotations
 
-from app.models import comms, identity, work, workflow  # noqa: F401
+from app.models import comms, identity, work, workflow
 
 __all__ = ["identity", "work", "workflow", "comms"]

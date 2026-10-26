@@ -478,3 +478,4 @@ authorization. `ProtectedRoute` redirects to `/login` (no session) or `/workspac
 from the backend are surfaced (e.g. "already decided" refreshes the list).
 
 - **7.1–7.5** — deliverables: idempotent seed (`app/seed.py`, 2 orgs + shared user + data, real services so audit/notifications are realistic); `README.md`; `docs/architecture.md` (request flow + workflow state machine Mermaid, decisions, stronger-isolation options); `docs/api.md` + `docs/openapi.json` (43 paths / 51 ops); `docs/requirements-checklist.md`; known limitations in README + AGENT.md.
+- **Final review (8.5)** — strict pass: every tenant query confirmed org-scoped; no hardcoded secrets; ruff cleanliness fixes (unused imports, deprecated import, collapsed nested if); Docker `.dockerignore` added; re-verified backend (108 tests), frontend (tsc + 16 tests) and the PostgreSQL smoke test.

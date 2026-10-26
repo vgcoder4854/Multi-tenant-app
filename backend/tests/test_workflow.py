@@ -175,7 +175,7 @@ def test_requester_cannot_approve_own_request(client, db, login):
 def test_double_decision_second_fails_with_409(client, db, login):
     t = _tenant(client, db, "a", login)
     # single-step template approved by any manager
-    tmpl = _make_two_step_template(client, t)
+    _make_two_step_template(client, t)
     # add a second manager
     m2 = create_user(db, email="manager2_a@example.com")
     add_member(db, t["org"], m2, MemberRole.manager)

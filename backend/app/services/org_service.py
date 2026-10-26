@@ -290,12 +290,15 @@ def change_member_role(
     membership = _membership_in_org(db, org_id, user_id)
     if membership.status != MemberStatus.active:
         raise ConflictError("This member is not active", code="MEMBER_NOT_ACTIVE")
-    if membership.role == MemberRole.org_admin and role != MemberRole.org_admin:
-        if _active_admin_count(db, org_id) <= 1:
-            raise ConflictError(
-                "An organization must keep at least one active org_admin",
-                code="LAST_ADMIN",
-            )
+    if (
+        membership.role == MemberRole.org_admin
+        and role != MemberRole.org_admin
+        and _active_admin_count(db, org_id) <= 1
+    ):
+        raise ConflictError(
+            "An organization must keep at least one active org_admin",
+            code="LAST_ADMIN",
+        )
     old_role = membership.role
     membership.role = role
     audit_service.record(
