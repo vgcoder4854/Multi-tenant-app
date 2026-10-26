@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { orgsApi } from "@/api/orgs";
 import { useAuth } from "@/lib/auth";
 import { FormField } from "@/components/FormField";
@@ -88,6 +88,16 @@ export function WorkspacePicker() {
             </form>
           </>
         )}
+      </Card>
+
+      <Card className="mt-4">
+        <h2 className="mb-1 font-medium">Have an invitation?</h2>
+        <p className="mb-3 text-sm text-slate-500">
+          Been invited to an existing organization? Accept it with the token from your invitation email.
+        </p>
+        <Link to="/accept-invite">
+          <Button variant="secondary">Accept an invitation</Button>
+        </Link>
       </Card>
     </div>
   );

@@ -56,6 +56,12 @@ export function Login() {
             Register
           </Link>
         </p>
+        <p className="mt-2 text-center text-sm text-slate-500">
+          Have an invitation?{" "}
+          <Link to="/accept-invite" className="text-brand-600 hover:underline">
+            Accept it
+          </Link>
+        </p>
       </div>
     </div>
   );
