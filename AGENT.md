@@ -434,3 +434,35 @@ npm test
 - **4.9** — dashboard & reporting: role-scoped SQL-aggregate summary (projects, tasks by status, my/overdue tasks, approvals) with filters, and a tenant-scoped CSV export. `tests/test_dashboard.py` (4). Full suite 57 passing.
 - **4.10** — backend test suite complete: added `tests/test_security.py` (48 parametrized 401 checks + cross-tenant read/write/list/search + employee-403). Backend suite **108 tests, 88% coverage**, all mandatory scenarios mapped (see §9).
 - **Backend verified on PostgreSQL 16** (embedded `pgserver`, no Docker): migrations, composite same-org FKs, PL/pgSQL audit trigger and a full end-to-end flow (register → org → project → task → workflow → dashboard → audit, self-approval blocked, audit append-only) all pass. See `scripts/pg_smoke.py`.
+- **5.1–5.6** — frontend: Vite + React + TS (strict) + Tailwind + React Router + TanStack Query + RHF/Zod; single typed API client (Bearer token, `ApiError`, 401 logout); `AuthProvider` (token in sessionStorage, workspace switching clears the query cache); query hooks with `org_id` in every key; UI primitives; role-based layout (sidebar, workspace switcher, notification bell polling every 30s, suspended-workspace page); all feature pages (auth, dashboard, projects, tasks, workflows, requests, notifications, members, audit, platform admin). Typecheck + production build pass; **16 Vitest/RTL tests pass**.
+
+---
+
+## 13. Frontend
+
+**Folder map** (`/frontend/src`): `api/` (single `client.ts` + typed endpoint modules),
+`types/` (mirror of backend Pydantic schemas), `lib/auth.tsx` (AuthProvider/useAuth),
+`hooks/` (TanStack Query hooks per feature), `components/ui` (primitives),
+`components/layout` (Layout, Sidebar, Topbar, WorkspaceSwitcher, NotificationBell),
+`components/` (FormField, ProtectedRoute, RoleGate, ConfirmDialog, FilterBar),
+`pages/` (one file per route), `test/` (render utils).
+
+**Data flow:** page → query hook → `api/*` → `client.ts` (adds Bearer token) → backend.
+Mutations invalidate the right query keys. On a 401 the client calls the auth provider's
+logout. After switching workspace the whole query cache is cleared.
+
+**State strategy:**
+- Server state: TanStack Query only. Every key includes `activeOrgId` so caches never
+  mix workspaces.
+- Auth/session state: React context (`AuthProvider`), token in memory + `sessionStorage`
+  for reload persistence (documented trade-off in §11).
+- Form state: React Hook Form + Zod; the backend stays the authority and its validation
+  messages are shown next to the field / as an `ErrorBanner`.
+
+**Role handling:** `RoleGate` hides UI by role for usability only; the backend enforces
+authorization. `ProtectedRoute` redirects to `/login` (no session) or `/workspaces`
+(no active workspace). A suspended workspace shows a full-page message.
+
+**Errors:** `ApiError(status, code, message)` is rendered via `ErrorBanner`; 409/403/422
+from the backend are surfaced (e.g. "already decided" refreshes the list).
+
