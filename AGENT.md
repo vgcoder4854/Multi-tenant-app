@@ -303,6 +303,15 @@ still succeeds (so the UI can show a clear "suspended" page).
 | POST | `/approval-requests/{id}/decision` | current approver | 200 | 403 NOT_AUTHORIZED_APPROVER, 409 REQUEST_NOT_PENDING |
 | POST | `/approval-requests/{id}/cancel` | requester (pending only) | 200 | 404, 409 |
 
+### Notifications (tag `notifications`) + admin
+| Method | Path | Who | Success | Notes |
+| --- | --- | --- | --- | --- |
+| GET | `/notifications` | any member | 200 Page | caller's rows in active org; `unread_only`, pagination |
+| GET | `/notifications/unread-count` | any member | 200 `{unread}` | bell badge |
+| POST | `/notifications/{id}/read` | owner | 200 | someone else's row → 404 |
+| POST | `/notifications/read-all` | any member | 200 `{unread}` | marks all caller's unread |
+| POST | `/admin/run-due-scan` | org_admin | 200 counts | demo trigger; prod uses `python -m app.jobs.due_scan` |
+
 ---
 
 ## 9. How to Run and Test
@@ -375,3 +384,4 @@ npm test
 - **4.3.2–4.3.5** — auth & organization management: register/login/me, create org, workspace switching, invitations (invite/list/revoke/accept), members (list/role/remove with last-admin rule), platform admin (list/status/stats). Added `TZDateTime` portable type (UTC-aware on SQLite+PG). Test infra (`tests/conftest.py` transaction-per-test + `tests/factories.py`); `tests/test_auth_org.py` (8 tests). Full suite 21 passing.
 - **4.5** — projects & tasks: project CRUD/archive/members with role visibility; task create/assign/update with assignee validation (`ASSIGNEE_NOT_IN_ORG`); status changes with transition rules, history rows, notifications and audit; task list with filters/search/sort/pagination. Fixed SQLite transaction handling (explicit BEGIN) so per-test rollback works. `tests/test_projects_tasks.py` (6 tests). Full suite 27 passing.
 - **4.6** — workflow & approvals: org_admin templates with ordered/validated steps (no step edits once used — deactivate instead); pure `workflow_engine` state machine; submit/list/detail/cancel; decide under `SELECT ... FOR UPDATE` + version bump with per-step authorization, decision history, notifications and audit. `tests/test_workflow_engine.py` (7) + `tests/test_workflow.py` (7). Full suite 42 passing.
+- **4.7** — notifications: list/unread-count/read/read-all (tenant + owner scoped), due/overdue scan (`app/jobs/due_scan.py`) with per-task-per-day de-duplication, org_admin `POST /admin/run-due-scan`. `tests/test_notifications.py` (6). Full suite 48 passing.
